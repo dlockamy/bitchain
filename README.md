@@ -178,24 +178,6 @@ Bitchain manifests use the following JSON schema:
 For formal validation, see [bitchain-schema.json](bitchain-schema.json).
 The schema uses JSON Schema draft-07 and validates both the modern multi-file format and legacy single-file format.
 
-### Old-format compatibility
-
-`bitchain` also accepts legacy manifests with top-level `version` and `blocks`:
-
-```json
-{
-  "version": "1.0",
-  "blocks": [
-    {
-      "hash": "<sha256-hash>",
-      "uris": ["file:///tmp/<hash>.bin"]
-    }
-  ]
-}
-```
-
-This format is mapped to a single generated `files[0]` entry when rebuilt.
-
 ## Examples
 
 Run a dry-run of a directory ingest:
