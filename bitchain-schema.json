@@ -1,0 +1,171 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://github.com/dlockamy/bitchain/releases/schema/v1.0",
+  "title": "Bitchain Manifest",
+  "description": "A content-addressed block manifest for distributing and reconstructing files across multiple storage backends.",
+  "type": "object",
+  "oneOf": [
+    {
+      "$ref": "#/definitions/bitchainV1"
+    },
+    {
+      "$ref": "#/definitions/bitchainLegacy"
+    }
+  ],
+  "definitions": {
+    "bitchainV1": {
+      "title": "Bitchain Manifest (v1.0)",
+      "description": "Modern multi-file bitchain manifest format.",
+      "type": "object",
+      "required": [
+        "version",
+        "files"
+      ],
+      "properties": {
+        "version": {
+          "type": "string",
+          "enum": [
+            "1.0"
+          ],
+          "description": "Schema version. Must be '1.0' for this format."
+        },
+        "files": {
+          "type": "array",
+          "description": "Array of file entries in the bitchain.",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/bitchainFile"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "bitchainLegacy": {
+      "title": "Bitchain Manifest (Legacy)",
+      "description": "Legacy single-file bitchain format. Supported for backwards compatibility. When rebuilt, mapped to a single files[0] entry.",
+      "type": "object",
+      "required": [
+        "version",
+        "blocks"
+      ],
+      "properties": {
+        "version": {
+          "type": "string",
+          "enum": [
+            "1.0"
+          ],
+          "description": "Schema version."
+        },
+        "blocks": {
+          "type": "array",
+          "description": "Array of block entries (legacy format).",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/block"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "bitchainFile": {
+      "title": "File Entry",
+      "description": "A single file in the bitchain, with its relative path and block list.",
+      "type": "object",
+      "required": [
+        "path",
+        "blocks"
+      ],
+      "properties": {
+        "path": {
+          "type": "string",
+          "description": "Relative or absolute file path as it was when ingested. Used as the target path during rebuild.",
+          "minLength": 1
+        },
+        "blocks": {
+          "type": "array",
+          "description": "Ordered list of blocks comprising this file.",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/definitions/block"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "block": {
+      "title": "Block",
+      "description": "A content-addressed block with SHA-256 hash and one or more candidate URIs.",
+      "type": "object",
+      "required": [
+        "hash",
+        "uris"
+      ],
+      "properties": {
+        "hash": {
+          "type": "string",
+          "description": "SHA-256 hash of the block bytes in hexadecimal format.",
+          "pattern": "^[a-f0-9]{64}$"
+        },
+        "uris": {
+          "type": "array",
+          "description": "Ordered list of candidate URIs for retrieving this block. Supports file://, http://, https://, and s3:// schemes.",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "format": "uri",
+            "description": "URI pointing to the block data. Tried in order until one succeeds."
+          }
+        }
+      },
+      "additionalProperties": false
+    }
+  },
+  "examples": [
+    {
+      "version": "1.0",
+      "files": [
+        {
+          "path": "archive.tar.gz",
+          "blocks": [
+            {
+              "hash": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+              "uris": [
+                "s3://my-bucket/blocks/archive.tar.gz/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+                "https://cdn.example.com/blocks/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+              ]
+            },
+            {
+              "hash": "ca761857eb0f94b8e1aec8924a29fc4d57c27d16b4844a79eefbe4d46f6e1eb0",
+              "uris": [
+                "s3://my-bucket/blocks/archive.tar.gz/ca761857eb0f94b8e1aec8924a29fc4d57c27d16b4844a79eefbe4d46f6e1eb0"
+              ]
+            }
+          ]
+        },
+        {
+          "path": "images/photo.jpg",
+          "blocks": [
+            {
+              "hash": "abc123def456abc123def456abc123def456abc123def456abc123def456abc1",
+              "uris": [
+                "file:///blocks/abc123def456abc123def456abc123def456abc123def456abc123def456abc1.bin",
+                "https://backup.example.com/photo/abc123def456abc123def456abc123def456abc123def456abc123def456abc1"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "version": "1.0",
+      "blocks": [
+        {
+          "hash": "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
+          "uris": [
+            "file:///tmp/deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef.bin"
+          ]
+        }
+      ]
+    }
+  ]
+}

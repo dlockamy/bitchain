@@ -173,6 +173,11 @@ Bitchain manifests use the following JSON schema:
 - `blocks[].hash`: SHA-256 hash of block bytes
 - `blocks[].uris`: candidate URIs for the block
 
+### JSON Schema
+
+For formal validation, see [bitchain-schema.json](bitchain-schema.json).
+The schema uses JSON Schema draft-07 and validates both the modern multi-file format and legacy single-file format.
+
 ### Old-format compatibility
 
 `bitchain` also accepts legacy manifests with top-level `version` and `blocks`:
