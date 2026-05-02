@@ -326,7 +326,11 @@ async fn ingest_path(
     };
 
     if dry_run {
-        println!("Dry run complete. Planned {} file(s) into {}.", bitchain.files.len(), output_bitchain.display());
+        println!(
+            "Dry run complete. Planned {} file(s) into {}.",
+            bitchain.files.len(),
+            output_bitchain.display()
+        );
         return Ok(());
     }
 
@@ -460,10 +464,12 @@ async fn download_object(uri: &str, config: &Option<Config>) -> io::Result<Vec<u
         let aws_config = config
             .as_ref()
             .and_then(|c| c.aws.as_ref())
-            .ok_or_else(|| io::Error::new(
-                io::ErrorKind::InvalidInput,
-                "S3 download requires AWS credentials in config",
-            ))?;
+            .ok_or_else(|| {
+                io::Error::new(
+                    io::ErrorKind::InvalidInput,
+                    "S3 download requires AWS credentials in config",
+                )
+            })?;
         download_from_s3(uri, aws_config).await
     } else if uri.starts_with("http://") || uri.starts_with("https://") {
         download_http(uri).await
@@ -494,12 +500,15 @@ async fn download_http(uri: &str) -> io::Result<Vec<u8>> {
 }
 
 async fn download_from_s3(uri: &str, aws_config: &AwsConfig) -> io::Result<Vec<u8>> {
-    let s3_uri = uri.strip_prefix("s3://").ok_or_else(|| {
-        io::Error::new(io::ErrorKind::InvalidInput, "Invalid S3 URI")
-    })?;
+    let s3_uri = uri
+        .strip_prefix("s3://")
+        .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "Invalid S3 URI"))?;
     let parts: Vec<&str> = s3_uri.splitn(2, '/').collect();
     if parts.len() != 2 {
-        return Err(io::Error::new(io::ErrorKind::InvalidInput, "Invalid S3 URI format"));
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "Invalid S3 URI format",
+        ));
     }
     let bucket = parts[0];
     let key = parts[1];
@@ -525,21 +534,22 @@ async fn download_from_s3(uri: &str, aws_config: &AwsConfig) -> io::Result<Vec<u
         .await
         .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("S3 download error: {:?}", e)))?;
 
-    let data = resp
-        .body
-        .collect()
-        .await
-        .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("S3 body read error: {:?}", e)))?;
+    let data = resp.body.collect().await.map_err(|e| {
+        io::Error::new(io::ErrorKind::Other, format!("S3 body read error: {:?}", e))
+    })?;
     Ok(data.into_bytes().to_vec())
 }
 
 async fn upload_to_s3(uri: &str, data: &[u8], aws_config: &AwsConfig) -> io::Result<()> {
-    let s3_uri = uri.strip_prefix("s3://").ok_or_else(|| {
-        io::Error::new(io::ErrorKind::InvalidInput, "Invalid S3 URI")
-    })?;
+    let s3_uri = uri
+        .strip_prefix("s3://")
+        .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "Invalid S3 URI"))?;
     let parts: Vec<&str> = s3_uri.splitn(2, '/').collect();
     if parts.len() != 2 {
-        return Err(io::Error::new(io::ErrorKind::InvalidInput, "Invalid S3 URI format"));
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "Invalid S3 URI format",
+        ));
     }
     let bucket = parts[0];
     let key = parts[1];
