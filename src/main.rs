@@ -2,7 +2,6 @@ use aws_config::{BehaviorVersion, Region};
 use aws_sdk_s3::config::Credentials;
 use aws_sdk_s3::primitives::ByteStream;
 use clap::{CommandFactory, Parser, Subcommand};
-use reqwest;
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
 use std::env;
@@ -10,7 +9,6 @@ use std::fs;
 use std::fs::File;
 use std::io::{self, BufReader, Read, Write};
 use std::path::{Path, PathBuf};
-use tokio;
 
 const DEFAULT_BLOCK_SIZE: usize = 1024 * 1024;
 
@@ -386,10 +384,7 @@ async fn ingest_file_entry(
                             "S3 uri_base requires AWS credentials in config; run --setup-config and provide AWS credentials",
                         ))?;
                     upload_to_s3(&uri, data, aws_config).await.map_err(|err| {
-                        io::Error::new(
-                            io::ErrorKind::Other,
-                            format!("Failed to upload block {}: {}", uri, err),
-                        )
+                        io::Error::other(format!("Failed to upload block {}: {}", uri, err))
                     })?;
                 } else {
                     println!("Dry run: would upload {}", uri);
@@ -446,10 +441,7 @@ async fn rebuild_bitchain(
                 }
             }
             let data = block_data.ok_or_else(|| {
-                io::Error::new(
-                    io::ErrorKind::Other,
-                    format!("All URIs failed for block {}", block.hash),
-                )
+                io::Error::other(format!("All URIs failed for block {}", block.hash))
             })?;
             output_file.write_all(&data)?;
         }
@@ -484,17 +476,17 @@ async fn download_object(uri: &str, config: &Option<Config>) -> io::Result<Vec<u
 async fn download_http(uri: &str) -> io::Result<Vec<u8>> {
     let response = reqwest::get(uri)
         .await
-        .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("HTTP request failed: {}", e)))?;
+        .map_err(|e| io::Error::other(format!("HTTP request failed: {}", e)))?;
     let status = response.status();
     let bytes = response
         .bytes()
         .await
-        .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("HTTP body failed: {}", e)))?;
+        .map_err(|e| io::Error::other(format!("HTTP body failed: {}", e)))?;
     if !status.is_success() {
-        return Err(io::Error::new(
-            io::ErrorKind::Other,
-            format!("HTTP request returned status {}", status),
-        ));
+        return Err(io::Error::other(format!(
+            "HTTP request returned status {}",
+            status
+        )));
     }
     Ok(bytes.to_vec())
 }
@@ -532,11 +524,13 @@ async fn download_from_s3(uri: &str, aws_config: &AwsConfig) -> io::Result<Vec<u
         .key(key)
         .send()
         .await
-        .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("S3 download error: {:?}", e)))?;
+        .map_err(|e| io::Error::other(format!("S3 download error: {:?}", e)))?;
 
-    let data = resp.body.collect().await.map_err(|e| {
-        io::Error::new(io::ErrorKind::Other, format!("S3 body read error: {:?}", e))
-    })?;
+    let data = resp
+        .body
+        .collect()
+        .await
+        .map_err(|e| io::Error::other(format!("S3 body read error: {:?}", e)))?;
     Ok(data.into_bytes().to_vec())
 }
 
@@ -576,7 +570,7 @@ async fn upload_to_s3(uri: &str, data: &[u8], aws_config: &AwsConfig) -> io::Res
         .body(body)
         .send()
         .await
-        .map_err(|e| io::Error::new(io::ErrorKind::Other, format!("S3 upload error: {:?}", e)))?;
+        .map_err(|e| io::Error::other(format!("S3 upload error: {:?}", e)))?;
 
     println!("Uploaded block to {}", uri);
     Ok(())
