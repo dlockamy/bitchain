@@ -1,5 +1,5 @@
 # bitchain — Agent Context
-# dlockamy/bitchain
+# clusterzer0/bitchain
 #
 # Paste this file into your AI's system prompt to work on this repo.
 # ─────────────────────────────────────────────────────────────────────────────
@@ -93,7 +93,7 @@ bitchain gc    [--dry-run]                               — remove unreferenced
 
 ## Refraction relationship
 
-**Refraction** (`dlockamy/refraction`) is the server-side companion to bitchain:
+**Refraction** (`clusterzer0/refraction`) is the server-side companion to bitchain:
 - bitchain is the CLI tool (local)
 - Refraction is the management API (self-hosted, enterprise)
 
